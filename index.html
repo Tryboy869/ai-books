@@ -3,1276 +3,824 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌌 AI Book Factory - Autonomous GitHub Scraper</title>
+    <title>🌌 AI Book Factory</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            padding: 20px;
             min-height: 100vh;
+            padding: 15px;
         }
-        
         .container {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: 16px;
             overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
-        
         header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 25px 20px;
             text-align: center;
         }
-        
-        header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+        header h1 { font-size: 1.8em; margin-bottom: 6px; }
+        header p { opacity: 0.85; font-size: 0.9em; }
+
+        .section {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
         }
-        
-        header p {
-            opacity: 0.9;
-        }
-        
-        .config-section {
-            padding: 30px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        
-        .config-section h2 {
-            margin-bottom: 20px;
-            color: #667eea;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
+        .section h2 { color: #667eea; margin-bottom: 15px; font-size: 1.1em; }
+
+        .form-group { margin-bottom: 14px; }
         .form-group label {
             display: block;
-            margin-bottom: 8px;
             font-weight: 600;
             color: #555;
+            margin-bottom: 5px;
+            font-size: 0.9em;
         }
-        
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 12px;
+            padding: 10px 12px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 14px;
-            transition: border-color 0.3s;
+            transition: border-color 0.2s;
         }
-        
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
             border-color: #667eea;
         }
-        
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        button {
-            flex: 1;
+        .form-group small { color: #999; font-size: 0.8em; margin-top: 3px; display: block; }
+
+        .custom-box {
+            display: none;
+            background: #f0f4ff;
+            border: 1px solid #c5d0fa;
+            border-radius: 10px;
             padding: 15px;
+            margin-top: 10px;
+        }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        button {
+            padding: 12px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: opacity 0.2s, transform 0.1s;
         }
-        
-        .btn-start {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .btn-start:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn-pause {
-            background: #ffa726;
-            color: white;
-        }
-        
-        .btn-stop {
-            background: #ef5350;
-            color: white;
-        }
-        
-        .btn-clear {
-            background: #78909c;
-            color: white;
-        }
-        
-        .dashboard {
-            padding: 30px;
-            background: #f8f9fa;
-        }
-        
+        button:active { transform: scale(0.97); }
+        .btn-start { background: #667eea; color: white; }
+        .btn-pause { background: #ffa726; color: white; }
+        .btn-stop  { background: #ef5350; color: white; }
+        .btn-clear { background: #78909c; color: white; }
+
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .stat-card h3 {
-            font-size: 14px;
-            color: #78909c;
-            margin-bottom: 10px;
-        }
-        
-        .stat-card .value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #667eea;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s;
-        }
-        
-        .logs-section {
-            padding: 30px;
-            background: #1e1e1e;
-            color: #d4d4d4;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .logs-section h3 {
-            color: #fff;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             margin-bottom: 15px;
         }
-        
-        .log-entry {
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            padding: 8px;
-            border-left: 3px solid #667eea;
-            margin-bottom: 5px;
-            background: #2d2d2d;
-            border-radius: 4px;
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 14px;
+            border: 1px solid #eee;
         }
-        
-        .log-success {
-            border-left-color: #4caf50;
-        }
-        
-        .log-error {
-            border-left-color: #f44336;
-        }
-        
-        .log-warning {
-            border-left-color: #ff9800;
-        }
-        
-        .status-badge {
+        .stat-card .label { font-size: 0.75em; color: #888; margin-bottom: 4px; }
+        .stat-card .value { font-size: 1.5em; font-weight: 700; color: #667eea; }
+
+        .badge {
             display: inline-block;
-            padding: 5px 15px;
+            padding: 3px 12px;
             border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+        .badge-run  { background: #4caf50; color: white; }
+        .badge-pause{ background: #ff9800; color: white; }
+        .badge-stop { background: #9e9e9e; color: white; }
+
+        .progress-bar {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.4s;
+        }
+
+        .logs-section {
+            background: #1a1a2e;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .logs-section h3 { color: #fff; margin-bottom: 10px; font-size: 0.95em; }
+        .log {
+            font-family: 'Courier New', monospace;
             font-size: 12px;
-            font-weight: 600;
-            margin-top: 10px;
+            padding: 5px 8px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
+            background: #16213e;
+            color: #e0e0e0;
+            word-break: break-all;
         }
-        
-        .status-running {
-            background: #4caf50;
-            color: white;
-        }
-        
-        .status-paused {
-            background: #ff9800;
-            color: white;
-        }
-        
-        .status-stopped {
-            background: #9e9e9e;
-            color: white;
-        }
+        .log-success { border-color: #4caf50; }
+        .log-error   { border-color: #f44336; color: #ffcdd2; }
+        .log-warning { border-color: #ff9800; color: #ffe0b2; }
+        .log-info    { border-color: #667eea; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🌌 AI Book Factory</h1>
-            <p>Autonomous GitHub Repository Scraper & LLM RAG Book Builder</p>
-        </header>
-        
-        <!-- CONFIGURATION -->
-        <div class="config-section">
-            <h2>⚙️ Configuration</h2>
-            
+<div class="container">
+
+    <header>
+        <h1>🌌 AI Book Factory</h1>
+        <p>Autonomous GitHub Scraper · LLM RAG Book Builder</p>
+    </header>
+
+    <!-- CONFIGURATION -->
+    <div class="section">
+        <h2>⚙️ Configuration</h2>
+
+        <div class="form-group">
+            <label>Target GitHub Repository (push destination):</label>
+            <input id="targetRepo" value="Tryboy869/ai-books" placeholder="user/repo-name">
+            <small>Books will be pushed as: ai.book.{domain}.lrb</small>
+        </div>
+
+        <div class="form-group">
+            <label>Target Domain:</label>
+            <select id="targetDomain" onchange="onDomainChange()">
+                <option value="python">Python (.py)</option>
+                <option value="rust">Rust (.rs)</option>
+                <option value="javascript">JavaScript (.js)</option>
+                <option value="typescript">TypeScript (.ts)</option>
+                <option value="go">Go (.go)</option>
+                <option value="docker">Docker (Dockerfile)</option>
+                <option value="kubernetes">Kubernetes (.yaml)</option>
+                <option value="github-actions">GitHub Actions (.yml)</option>
+                <option value="shell">Shell (.sh)</option>
+                <option value="json">JSON (.json)</option>
+                <option value="markdown">Markdown (.md)</option>
+                <option value="custom">🎯 Custom...</option>
+            </select>
+        </div>
+
+        <div class="custom-box" id="customBox">
             <div class="form-group">
-                <label for="targetRepo">Target GitHub Repository (for pushing books):</label>
-                <input type="text" id="targetRepo" placeholder="e.g., Tryboy869/ai-books" value="Tryboy869/ai-books">
+                <label>Language / Domain Name:</label>
+                <input id="customName" placeholder="e.g. solidity, elixir, terraform">
+                <small>Used in filename: ai.book.{name}.lrb</small>
             </div>
-            
             <div class="form-group">
-                <label for="targetDomain">Target Domain:</label>
-                <select id="targetDomain" onchange="toggleCustomMode()">
-                    <option value="python">Python</option>
-                    <option value="rust">Rust</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="typescript">TypeScript</option>
-                    <option value="go">Go</option>
-                    <option value="docker">Docker</option>
-                    <option value="kubernetes">Kubernetes</option>
-                    <option value="github-actions">GitHub Actions</option>
-                    <option value="shell">Shell Scripts</option>
-                    <option value="json">JSON Configs</option>
-                    <option value="yaml">YAML Configs</option>
-                    <option value="markdown">Markdown Docs</option>
-                    <option value="custom">🎯 Custom (Your own config)</option>
-                </select>
+                <label>File Extensions (comma-separated):</label>
+                <input id="customExts" placeholder=".sol, .vy">
             </div>
-            
-            <!-- CUSTOM MODE CONFIGURATION -->
-            <div id="customConfig" style="display: none; padding: 20px; background: #f0f4ff; border-radius: 10px; margin-top: 20px;">
-                <h3 style="color: #667eea; margin-bottom: 15px;">🎯 Custom Configuration</h3>
-                
-                <div class="form-group">
-                    <label for="customLanguage">Language/Domain Name:</label>
-                    <input type="text" id="customLanguage" placeholder="e.g., solidity, elixir, swift, terraform">
-                    <small style="color: #78909c;">This will be used for the book filename: ai.book.{name}.lrb</small>
-                </div>
-                
-                <div class="form-group">
-                    <label for="customExtensions">File Extensions (comma-separated):</label>
-                    <input type="text" id="customExtensions" placeholder="e.g., .sol, .ex, .exs, .swift, .tf">
-                    <small style="color: #78909c;">Example: .py, .pyw for Python | .rs for Rust | .sol for Solidity</small>
-                </div>
-                
-                <div class="form-group">
-                    <label for="customDependencyFiles">Dependency Files (optional, comma-separated):</label>
-                    <input type="text" id="customDependencyFiles" placeholder="e.g., package.json, Cargo.toml, requirements.txt">
-                    <small style="color: #78909c;">Config files that define dependencies. Leave empty if not needed.</small>
-                </div>
-                
-                <div class="form-group">
-                    <label for="customSearchQuery">GitHub Search Query (optional):</label>
-                    <input type="text" id="customSearchQuery" placeholder="e.g., language:solidity stars:>100">
-                    <small style="color: #78909c;">Advanced: Custom GitHub search. Leave empty to use language:{name}</small>
-                </div>
-            </div>
-            
             <div class="form-group">
-                <label for="githubToken">GitHub Personal Access Token (optional, for higher rate limits):</label>
-                <input type="password" id="githubToken" placeholder="ghp_...">
-                <small style="color: #78909c;">Without token: 60 requests/hour. With token: 5000 requests/hour.</small>
+                <label>Dependency Files (optional, comma-separated):</label>
+                <input id="customDeps" placeholder="package.json, hardhat.config.js">
             </div>
-            
             <div class="form-group">
-                <label for="quotaLimit">Quota Limit per Hour (%):</label>
-                <input type="number" id="quotaLimit" value="70" min="10" max="95">
-                <small style="color: #78909c;">Recommended: 70% to avoid rate limiting</small>
-            </div>
-            
-            <div class="button-group">
-                <button class="btn-start" onclick="startFactory()">🚀 Start Factory</button>
-                <button class="btn-pause" onclick="pauseFactory()">⏸️ Pause</button>
-                <button class="btn-stop" onclick="stopFactory()">⏹️ Stop</button>
-                <button class="btn-clear" onclick="clearData()">🗑️ Clear All Data</button>
+                <label>GitHub Search Query (optional):</label>
+                <input id="customQuery" placeholder="language:solidity stars:>100">
+                <small>Leave empty to auto-generate from name</small>
             </div>
         </div>
-        
-        <!-- DASHBOARD -->
-        <div class="dashboard">
-            <h2>📊 Factory Status <span id="statusBadge" class="status-badge status-stopped">Stopped</span></h2>
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Current Cycle</h3>
-                    <div class="value" id="cycleCount">0</div>
-                </div>
-                
-                <div class="stat-card">
-                    <h3>Repos Processed</h3>
-                    <div class="value" id="reposProcessed">0</div>
-                </div>
-                
-                <div class="stat-card">
-                    <h3>Quota Used</h3>
-                    <div class="value" id="quotaUsed">0%</div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="quotaProgress" style="width: 0%"></div>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <h3>Book Size</h3>
-                    <div class="value" id="bookSize">0 MB</div>
-                </div>
-                
-                <div class="stat-card">
-                    <h3>Next Run</h3>
-                    <div class="value" id="nextRun" style="font-size: 18px;">--</div>
-                </div>
-                
-                <div class="stat-card">
-                    <h3>Storage Used</h3>
-                    <div class="value" id="storageUsed">0 MB</div>
-                </div>
-            </div>
+
+        <div class="form-group">
+            <label>GitHub Personal Access Token:</label>
+            <input id="githubToken" type="password" placeholder="ghp_...">
+            <small>Required to push books. Also boosts scraping to 5000 req/h vs 60 req/h</small>
         </div>
-        
-        <!-- LOGS -->
-        <div class="logs-section">
-            <h3>📝 Activity Logs</h3>
-            <div id="logs"></div>
+
+        <div class="form-group">
+            <label>Quota Limit per Hour: <strong id="quotaLabel">70%</strong></label>
+            <input id="quotaLimit" type="range" min="10" max="90" value="70"
+                   oninput="document.getElementById('quotaLabel').textContent=this.value+'%'">
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-start" onclick="startFactory()">🚀 Start</button>
+            <button class="btn-pause" onclick="pauseFactory()">⏸️ Pause</button>
+            <button class="btn-stop"  onclick="stopFactory()">⏹️ Stop</button>
+            <button class="btn-clear" onclick="clearData()">🗑️ Clear</button>
         </div>
     </div>
-    
-    <script>
-        // ========================================================================
-        // GLOBAL STATE
-        // ========================================================================
-        
-        let worker = null;
-        let factoryState = {
-            running: false,
-            paused: false,
-            cycle: 0,
-            reposProcessed: 0,
-            quotaUsed: 0,
-            bookSize: 0,
-            storageUsed: 0
-        };
-        
-        // ========================================================================
-        // INITIALIZATION
-        // ========================================================================
-        
-        window.addEventListener('load', async () => {
-            addLog('🌌 AI Book Factory initialized', 'success');
-            
-            // Load saved state
-            await loadState();
-            
-            // Check IndexedDB usage
-            await updateStorageStats();
-        });
-        
-        // ========================================================================
-        // CUSTOM MODE TOGGLE
-        // ========================================================================
-        
-        function toggleCustomMode() {
-            const domain = document.getElementById('targetDomain').value;
-            const customConfig = document.getElementById('customConfig');
-            
-            if (domain === 'custom') {
-                customConfig.style.display = 'block';
-            } else {
-                customConfig.style.display = 'none';
-            }
-        }
-        
-        // ========================================================================
-        // FACTORY CONTROL
-        // ========================================================================
-        
-        async function startFactory() {
-            if (factoryState.running) {
-                addLog('⚠️ Factory already running', 'warning');
-                return;
-            }
-            
-            const targetDomain = document.getElementById('targetDomain').value;
-            
-            let config = {
-                targetRepo: document.getElementById('targetRepo').value,
-                githubToken: document.getElementById('githubToken').value,
-                quotaLimit: parseInt(document.getElementById('quotaLimit').value) / 100
-            };
-            
-            // Handle custom mode
-            if (targetDomain === 'custom') {
-                const customLanguage = document.getElementById('customLanguage').value.trim();
-                const customExtensions = document.getElementById('customExtensions').value.trim();
-                
-                if (!customLanguage || !customExtensions) {
-                    addLog('❌ Custom mode requires Language Name and File Extensions', 'error');
-                    return;
-                }
-                
-                config.targetDomain = customLanguage.toLowerCase().replace(/\s+/g, '-');
-                config.customMode = true;
-                config.fileExtensions = customExtensions.split(',').map(ext => ext.trim());
-                config.dependencyFiles = document.getElementById('customDependencyFiles').value
-                    .split(',')
-                    .map(f => f.trim())
-                    .filter(f => f.length > 0);
-                config.searchQuery = document.getElementById('customSearchQuery').value.trim() || 
-                                    `language:${customLanguage} stars:>50`;
-                
-                addLog(`🎯 Custom mode activated: ${customLanguage}`, 'info');
-                addLog(`📄 Extensions: ${config.fileExtensions.join(', ')}`, 'info');
-                if (config.dependencyFiles.length > 0) {
-                    addLog(`📦 Dependency files: ${config.dependencyFiles.join(', ')}`, 'info');
-                }
-            } else {
-                config.targetDomain = targetDomain;
-                config.customMode = false;
-            }
-            
-            if (!config.targetRepo) {
-                addLog('❌ Please specify target repository', 'error');
-                return;
-            }
-            
-            addLog('🚀 Starting AI Book Factory...', 'success');
-            addLog(`📌 Target: ${config.targetRepo}`, 'info');
-            addLog(`🎯 Domain: ${config.targetDomain}`, 'info');
-            
-            factoryState.running = true;
-            factoryState.paused = false;
-            updateStatusBadge();
-            
-            // Create worker
-            const workerCode = generateWorkerCode();
-            const blob = new Blob([workerCode], { type: 'application/javascript' });
-            const workerUrl = URL.createObjectURL(blob);
-            
-            worker = new Worker(workerUrl);
-            
-            // Handle messages from worker
-            worker.onmessage = handleWorkerMessage;
-            
-            // Start worker
-            worker.postMessage({ type: 'start', config });
-        }
-        
-        function pauseFactory() {
-            if (!factoryState.running) {
-                addLog('⚠️ Factory not running', 'warning');
-                return;
-            }
-            
-            factoryState.paused = !factoryState.paused;
-            
-            if (factoryState.paused) {
-                addLog('⏸️ Factory paused', 'warning');
-                worker.postMessage({ type: 'pause' });
-            } else {
-                addLog('▶️ Factory resumed', 'success');
-                worker.postMessage({ type: 'resume' });
-            }
-            
-            updateStatusBadge();
-        }
-        
-        function stopFactory() {
-            if (!factoryState.running) {
-                addLog('⚠️ Factory not running', 'warning');
-                return;
-            }
-            
-            addLog('⏹️ Stopping factory...', 'warning');
-            
-            if (worker) {
-                worker.postMessage({ type: 'stop' });
-                worker.terminate();
-                worker = null;
-            }
-            
-            factoryState.running = false;
-            factoryState.paused = false;
-            updateStatusBadge();
-            
-            addLog('✅ Factory stopped', 'success');
-        }
-        
-        async function clearData() {
-            if (factoryState.running) {
-                addLog('❌ Stop factory before clearing data', 'error');
-                return;
-            }
-            
-            if (!confirm('⚠️ This will delete all stored data. Continue?')) {
-                return;
-            }
-            
-            addLog('🗑️ Clearing all data...', 'warning');
-            
-            // Clear IndexedDB
-            await clearIndexedDB();
-            
-            // Reset state
-            factoryState = {
-                running: false,
-                paused: false,
-                cycle: 0,
-                reposProcessed: 0,
-                quotaUsed: 0,
-                bookSize: 0,
-                storageUsed: 0
-            };
-            
-            updateDashboard();
-            await updateStorageStats();
-            
-            addLog('✅ All data cleared', 'success');
-        }
-        
-        // ========================================================================
-        // WORKER MESSAGE HANDLER
-        // ========================================================================
-        
-        function handleWorkerMessage(event) {
-            const { type, data } = event.data;
-            
-            switch (type) {
-                case 'log':
-                    addLog(data.message, data.level || 'info');
-                    break;
-                    
-                case 'stats':
-                    factoryState.cycle = data.cycle || factoryState.cycle;
-                    factoryState.reposProcessed = data.reposProcessed || factoryState.reposProcessed;
-                    factoryState.quotaUsed = data.quotaUsed || factoryState.quotaUsed;
-                    factoryState.bookSize = data.bookSize || factoryState.bookSize;
-                    updateDashboard();
-                    break;
-                    
-                case 'storage-update':
-                    updateStorageStats();
-                    break;
-                    
-                case 'error':
-                    addLog(`❌ Error: ${data.message}`, 'error');
-                    break;
-                    
-                case 'complete':
-                    addLog('✅ Cycle complete, waiting for next hour...', 'success');
-                    break;
-            }
-        }
-        
-        // ========================================================================
-        // UI UPDATES
-        // ========================================================================
-        
-        function updateDashboard() {
-            document.getElementById('cycleCount').textContent = factoryState.cycle;
-            document.getElementById('reposProcessed').textContent = factoryState.reposProcessed;
-            document.getElementById('quotaUsed').textContent = Math.round(factoryState.quotaUsed * 100) + '%';
-            document.getElementById('quotaProgress').style.width = (factoryState.quotaUsed * 100) + '%';
-            document.getElementById('bookSize').textContent = (factoryState.bookSize / 1024 / 1024).toFixed(2) + ' MB';
-        }
-        
-        function updateStatusBadge() {
-            const badge = document.getElementById('statusBadge');
-            
-            if (factoryState.running && !factoryState.paused) {
-                badge.textContent = 'Running';
-                badge.className = 'status-badge status-running';
-            } else if (factoryState.paused) {
-                badge.textContent = 'Paused';
-                badge.className = 'status-badge status-paused';
-            } else {
-                badge.textContent = 'Stopped';
-                badge.className = 'status-badge status-stopped';
-            }
-        }
-        
-        function addLog(message, level = 'info') {
-            const logsDiv = document.getElementById('logs');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry log-' + level;
-            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logsDiv.insertBefore(entry, logsDiv.firstChild);
-            
-            // Keep only last 100 logs
-            while (logsDiv.children.length > 100) {
-                logsDiv.removeChild(logsDiv.lastChild);
-            }
-        }
-        
-        async function updateStorageStats() {
-            if ('storage' in navigator && 'estimate' in navigator.storage) {
-                const estimate = await navigator.storage.estimate();
-                const used = estimate.usage || 0;
-                factoryState.storageUsed = used;
-                document.getElementById('storageUsed').textContent = (used / 1024 / 1024).toFixed(2) + ' MB';
-            }
-        }
-        
-        // ========================================================================
-        // STATE PERSISTENCE
-        // ========================================================================
-        
-        async function loadState() {
-            try {
-                const db = await openDB();
-                const tx = db.transaction(['state'], 'readonly');
-                const store = tx.objectStore('state');
-                const savedState = await store.get('factoryState');
-                
-                if (savedState) {
-                    factoryState = savedState;
-                    updateDashboard();
-                    updateStatusBadge();
-                    addLog('✅ State loaded from previous session', 'success');
-                }
-            } catch (e) {
-                addLog('⚠️ Could not load previous state', 'warning');
-            }
-        }
-        
-        // ========================================================================
-        // INDEXEDDB UTILITIES
-        // ========================================================================
-        
-        function openDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open('AIBookFactory', 1);
-                
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => resolve(request.result);
-                
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    
-                    if (!db.objectStoreNames.contains('state')) {
-                        db.createObjectStore('state');
-                    }
-                    
-                    if (!db.objectStoreNames.contains('books')) {
-                        db.createObjectStore('books');
-                    }
-                    
-                    if (!db.objectStoreNames.contains('repos')) {
-                        db.createObjectStore('repos');
-                    }
-                };
-            });
-        }
-        
-        async function clearIndexedDB() {
-            const db = await openDB();
-            const tx = db.transaction(['state', 'books', 'repos'], 'readwrite');
-            
-            await tx.objectStore('state').clear();
-            await tx.objectStore('books').clear();
-            await tx.objectStore('repos').clear();
-            
-            await tx.complete;
-        }
-        
-        // ========================================================================
-        // WORKER CODE GENERATION
-        // ========================================================================
-        
-        function generateWorkerCode() {
-            return `
-// ============================================================================
-// AI BOOK FACTORY WORKER
-// ============================================================================
 
-let config = null;
+    <!-- DASHBOARD -->
+    <div class="section">
+        <h2>📊 Status <span id="badge" class="badge badge-stop">Stopped</span></h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">Current Cycle</div>
+                <div class="value" id="sCycle">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Repos Processed</div>
+                <div class="value" id="sRepos">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Quota Used</div>
+                <div class="value" id="sQuota">0%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="sQuotaBar" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Book Size</div>
+                <div class="value" id="sBook">0 KB</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Next Run</div>
+                <div class="value" id="sNext" style="font-size:1em">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Storage Used</div>
+                <div class="value" id="sStorage">0 MB</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="logs-section">
+        <h3>📝 Activity Logs</h3>
+        <div id="logBox"></div>
+    </div>
+
+</div>
+
+<script>
+// ============================================================================
+// STATE
+// ============================================================================
+let running   = false;
+let paused    = false;
+let stopFlag  = false;
+let db        = null;
+let loopTimer = null;
+
 let state = {
-    running: false,
-    paused: false,
-    cycle: 0,
+    cycle:          0,
     processedRepos: [],
-    currentBook: null,
-    quotaUsed: 0,
-    quotaLimit: 0.7,
-    cycleStartTime: Date.now()
+    existingFileSha: null,
+    quotaUsed:       0,
+    cycleStart:      Date.now(),
+    currentBook:     null
 };
 
-let db = null;
+let cfg = {};
 
 // ============================================================================
-// WORKER MESSAGE HANDLER
+// UI HELPERS
 // ============================================================================
+function onDomainChange() {
+    document.getElementById('customBox').style.display =
+        document.getElementById('targetDomain').value === 'custom' ? 'block' : 'none';
+}
 
-self.onmessage = async function(event) {
-    const { type, config: newConfig } = event.data;
-    
-    switch (type) {
-        case 'start':
-            config = newConfig;
-            state.quotaLimit = config.quotaLimit;
-            await initFactory();
-            break;
-            
-        case 'pause':
-            state.paused = true;
-            break;
-            
-        case 'resume':
-            state.paused = false;
-            break;
-            
-        case 'stop':
-            state.running = false;
-            await cleanup();
-            break;
+function log(msg, level = 'info') {
+    const box   = document.getElementById('logBox');
+    const entry = document.createElement('div');
+    entry.className = `log log-${level}`;
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    box.insertBefore(entry, box.firstChild);
+    while (box.children.length > 120) box.removeChild(box.lastChild);
+}
+
+function setStats(s) {
+    document.getElementById('sCycle').textContent    = s.cycle ?? state.cycle;
+    document.getElementById('sRepos').textContent    = s.repos ?? state.processedRepos.length;
+    const q = Math.round((s.quota ?? state.quotaUsed) * 100);
+    document.getElementById('sQuota').textContent    = q + '%';
+    document.getElementById('sQuotaBar').style.width = q + '%';
+    if (s.bookSize != null) {
+        const kb = (s.bookSize / 1024).toFixed(1);
+        document.getElementById('sBook').textContent = kb > 1024
+            ? (kb / 1024).toFixed(2) + ' MB'
+            : kb + ' KB';
     }
-};
+    if (s.next) document.getElementById('sNext').textContent = s.next;
+}
+
+function setBadge(status) {
+    const b = document.getElementById('badge');
+    const map = {
+        running: ['Running',  'badge-run'],
+        paused:  ['Paused',   'badge-pause'],
+        stopped: ['Stopped',  'badge-stop']
+    };
+    b.textContent = map[status][0];
+    b.className   = `badge ${map[status][1]}`;
+}
+
+async function updateStorageStats() {
+    if (navigator.storage?.estimate) {
+        const e = await navigator.storage.estimate();
+        document.getElementById('sStorage').textContent =
+            ((e.usage || 0) / 1024 / 1024).toFixed(2) + ' MB';
+    }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ============================================================================
-// INITIALIZATION
+// CONTROLS
 // ============================================================================
+async function startFactory() {
+    if (running) { log('Already running', 'warning'); return; }
 
-async function initFactory() {
-    log('🔧 Initializing factory...', 'info');
-    
-    // Open IndexedDB
+    const domain = document.getElementById('targetDomain').value;
+
+    cfg = {
+        targetRepo:  document.getElementById('targetRepo').value.trim(),
+        githubToken: document.getElementById('githubToken').value.trim(),
+        quotaLimit:  parseInt(document.getElementById('quotaLimit').value) / 100,
+        customMode:  domain === 'custom'
+    };
+
+    if (cfg.customMode) {
+        cfg.targetDomain    = document.getElementById('customName').value.trim().toLowerCase();
+        cfg.fileExtensions  = document.getElementById('customExts').value.split(',').map(s=>s.trim()).filter(Boolean);
+        cfg.dependencyFiles = document.getElementById('customDeps').value.split(',').map(s=>s.trim()).filter(Boolean);
+        cfg.searchQuery     = document.getElementById('customQuery').value.trim();
+        if (!cfg.targetDomain || !cfg.fileExtensions.length) {
+            log('❌ Custom mode: please fill Language Name and Extensions', 'error'); return;
+        }
+    } else {
+        cfg.targetDomain    = domain;
+        cfg.fileExtensions  = DOMAIN_EXTENSIONS[domain] || ['.txt'];
+        cfg.dependencyFiles = DOMAIN_DEPS[domain]       || [];
+        cfg.searchQuery     = '';
+    }
+
+    if (!cfg.targetRepo) { log('❌ Target repository is required', 'error'); return; }
+    if (!cfg.githubToken) { log('⚠️ No GitHub token — push will be skipped', 'warning'); }
+
+    log(`🚀 Starting factory — domain: ${cfg.targetDomain}`, 'success');
+    log(`📌 Repo: ${cfg.targetRepo}`, 'info');
+
+    running  = true;
+    paused   = false;
+    stopFlag = false;
+    setBadge('running');
+
     db = await openDB();
-    
-    // Load state
-    const savedState = await loadState();
-    if (savedState) {
-        state = { ...state, ...savedState };
-        log('✅ Loaded previous state', 'success');
+    const saved = await dbGet('state', 'main');
+    if (saved) {
+        state = saved;
+        log(`♻️  Resuming session — ${state.processedRepos.length} repos already done`, 'success');
+    } else {
+        state = { cycle:0, processedRepos:[], existingFileSha:null, quotaUsed:0, cycleStart:Date.now(), currentBook:null };
     }
-    
-    // Clone existing book
-    await cloneExistingBook();
-    
-    // Start main loop
-    state.running = true;
-    mainLoop();
+
+    setStats({ cycle: state.cycle, repos: state.processedRepos.length, quota: state.quotaUsed });
+
+    runLoop();
+}
+
+function pauseFactory() {
+    if (!running) { log('Not running', 'warning'); return; }
+    paused = !paused;
+    setBadge(paused ? 'paused' : 'running');
+    log(paused ? '⏸️ Paused' : '▶️ Resumed', 'warning');
+}
+
+function stopFactory() {
+    if (!running) { log('Not running', 'warning'); return; }
+    stopFlag = true;
+    running  = false;
+    paused   = false;
+    if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+    setBadge('stopped');
+    log('⏹️ Factory stopped', 'warning');
+    dbSet('state', 'main', state);
+}
+
+async function clearData() {
+    if (running) { log('❌ Stop the factory first', 'error'); return; }
+    if (!confirm('Delete ALL stored data?')) return;
+    const d = await openDB();
+    for (const s of ['state','books','repos']) {
+        const tx = d.transaction([s], 'readwrite');
+        tx.objectStore(s).clear();
+    }
+    state = { cycle:0, processedRepos:[], existingFileSha:null, quotaUsed:0, cycleStart:Date.now(), currentBook:null };
+    setStats({ cycle:0, repos:0, quota:0, bookSize:0 });
+    document.getElementById('sNext').textContent = '--';
+    await updateStorageStats();
+    log('🗑️ All data cleared', 'warning');
 }
 
 // ============================================================================
-// MAIN LOOP
+// MAIN LOOP (runs in main thread — no worker needed)
 // ============================================================================
+async function runLoop() {
+    while (running && !stopFlag) {
+        // Pause check
+        while (paused && !stopFlag) await sleep(500);
+        if (stopFlag) break;
 
-async function mainLoop() {
-    while (state.running) {
-        if (state.paused) {
-            await sleep(1000);
-            continue;
+        // Quota check
+        if (state.quotaUsed >= cfg.quotaLimit) {
+            const elapsed   = Date.now() - state.cycleStart;
+            const remaining = Math.max(0, 3600000 - elapsed);
+            const mins      = Math.ceil(remaining / 60000);
+            log(`⏰ Quota limit (${Math.round(state.quotaUsed*100)}%) — waiting ${mins} min`, 'warning');
+            document.getElementById('sNext').textContent = `${mins} min`;
+            setStats({ quota: state.quotaUsed });
+            await dbSet('state', 'main', state);
+            await sleep(remaining);
+            state.quotaUsed   = 0;
+            state.cycleStart  = Date.now();
+            document.getElementById('sNext').textContent = '--';
         }
-        
-        // Check quota
-        if (state.quotaUsed >= state.quotaLimit) {
-            log(\`⏸️ Quota limit reached (\${Math.round(state.quotaUsed * 100)}%), waiting for next hour...\`, 'warning');
-            await waitNextHour();
-            state.quotaUsed = 0;
-            state.cycleStartTime = Date.now();
-        }
-        
-        // Increment cycle
+
+        // ---- CYCLE START ----
         state.cycle++;
-        updateStats();
-        
-        log(\`🔄 Starting cycle \${state.cycle}...\`, 'info');
-        
-        // Discover new repos
+        log(`\n━━━ 🔄 CYCLE ${state.cycle} START ━━━`, 'success');
+        setStats({ cycle: state.cycle });
+
+        // Step 1: Check / clone existing book from GitHub
+        await cloneOrLoadBook();
+
+        // Step 2: Discover new repos
         const newRepos = await discoverRepos();
-        log(\`🔍 Found \${newRepos.length} new repositories\`, 'info');
-        
-        // Process repos
-        for (const repo of newRepos) {
-            if (!state.running || state.paused) break;
-            if (state.quotaUsed >= state.quotaLimit) break;
-            
-            await processRepo(repo);
+        log(`🔍 ${newRepos.length} new repos to process`, 'info');
+
+        if (newRepos.length === 0) {
+            log('💤 No new repos found — all known repos processed', 'warning');
         }
-        
-        // Update book
-        await updateBook();
-        
-        // Save state
-        await saveState();
-        
-        // Cleanup temporary data
-        await cleanupTemporaryData();
-        
-        log('✅ Cycle complete', 'success');
-        postMessage({ type: 'complete' });
-        
-        // Sleep before next cycle
-        await sleep(60000); // 1 minute
+
+        // Step 3: Process repos
+        for (const repo of newRepos) {
+            if (!running || stopFlag) break;
+            while (paused && !stopFlag) await sleep(500);
+            if (state.quotaUsed >= cfg.quotaLimit) break;
+            await processRepo(repo);
+            setStats({ repos: state.processedRepos.length, quota: state.quotaUsed });
+        }
+
+        // Step 4: Push to GitHub
+        await pushBookToGitHub();
+
+        // Step 5: Cleanup temporary data
+        await cleanupTemp();
+
+        // Step 6: Save state
+        await dbSet('state', 'main', state);
+
+        log(`━━━ ✅ CYCLE ${state.cycle} COMPLETE ━━━`, 'success');
+
+        // Wait 60 s before next cycle (anti-spam)
+        log('💤 Waiting 60s before next cycle...', 'info');
+        await sleep(60000);
+    }
+
+    if (stopFlag) {
+        log('🛑 Loop exited cleanly', 'info');
     }
 }
 
 // ============================================================================
-// REPO DISCOVERY
+// STEP 1 — CHECK EXISTING BOOK ON GITHUB
 // ============================================================================
+async function cloneOrLoadBook() {
+    const bookFile = `ai.book.${cfg.targetDomain}.lrb`;
+    log(`🔍 Checking GitHub for: ${bookFile}`, 'info');
+
+    if (!cfg.githubToken) {
+        log('⚠️ No token — skipping remote check, using local state', 'warning');
+        if (!state.currentBook) state.currentBook = makeNewBook();
+        return;
+    }
+
+    try {
+        const url = `https://api.github.com/repos/${cfg.targetRepo}/contents/${bookFile}`;
+        const res = await ghFetch(url, 'GET');
+        state.quotaUsed += 0.002;
+
+        if (res.ok) {
+            const info    = await res.json();
+            const raw     = decodeURIComponent(escape(atob(info.content.replace(/\n/g,''))));
+            state.currentBook    = JSON.parse(raw);
+            state.processedRepos = state.currentBook.repos || [];
+            state.existingFileSha = info.sha;
+            log(`✅ Book found — ${state.processedRepos.length} repos already done (SHA: ${info.sha.slice(0,8)})`, 'success');
+        } else if (res.status === 404) {
+            state.currentBook    = makeNewBook();
+            state.existingFileSha = null;
+            log(`📚 No existing book — creating new one`, 'info');
+        } else {
+            throw new Error(`API ${res.status}`);
+        }
+    } catch (e) {
+        if (!state.currentBook) state.currentBook = makeNewBook();
+        log(`⚠️ Remote check failed (${e.message}) — using local state`, 'warning');
+    }
+}
+
+function makeNewBook() {
+    return {
+        domain:   cfg.targetDomain,
+        version:  '1.0.0',
+        created:  new Date().toISOString(),
+        updated:  new Date().toISOString(),
+        repos:    [],
+        patterns: {},
+        metadata: { totalFiles: 0, totalRepos: 0 }
+    };
+}
+
+// ============================================================================
+// STEP 2 — DISCOVER REPOS
+// ============================================================================
+const DOMAIN_EXTENSIONS = {
+    python: ['.py'],
+    rust: ['.rs'],
+    javascript: ['.js','.jsx'],
+    typescript: ['.ts','.tsx'],
+    go: ['.go'],
+    docker: ['Dockerfile','.dockerignore'],
+    kubernetes: ['.yaml','.yml'],
+    'github-actions': ['.yml','.yaml'],
+    shell: ['.sh','.bash'],
+    json: ['.json'],
+    markdown: ['.md']
+};
+const DOMAIN_DEPS = {
+    python: ['requirements.txt','pyproject.toml','setup.py'],
+    rust: ['Cargo.toml'],
+    javascript: ['package.json'],
+    typescript: ['package.json','tsconfig.json'],
+    go: ['go.mod'],
+    docker: ['docker-compose.yml'],
+    kubernetes: [],
+    'github-actions': [],
+    shell: ['Makefile'],
+    json: [],
+    markdown: []
+};
 
 async function discoverRepos() {
-    const domain = config.targetDomain;
-    
-    // Use custom search query if in custom mode
-    const searchQuery = config.customMode && config.searchQuery ? 
-        config.searchQuery : 
-        \`language:\${domain} stars:>50\`;
-    
-    log(\`🔎 Searching GitHub: \${searchQuery}\`, 'info');
-    
+    const query = cfg.searchQuery || `language:${cfg.targetDomain} stars:>50`;
+    log(`🔎 GitHub search: "${query}"`, 'info');
+
+    let repos = await githubSearch(query, !!cfg.githubToken);
+
+    if (!Array.isArray(repos)) {
+        log(`⚠️ Search failed — retrying without token`, 'warning');
+        repos = await githubSearch(query, false);
+    }
+
+    if (!Array.isArray(repos)) return [];
+
+    const fresh = repos.filter(r => !state.processedRepos.includes(r.full_name));
+    return fresh.slice(0, 20);
+}
+
+async function githubSearch(query, useToken) {
     try {
-        // Try without token first
-        let repos = await githubSearch(searchQuery, false);
-        
-        // If rate limited, use token
-        if (repos.error === 'rate_limit') {
-            log('⚠️ Rate limited, using token...', 'warning');
-            repos = await githubSearch(searchQuery, true);
+        const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=100&sort=stars`;
+        const res = await ghFetch(url, 'GET', useToken);
+        state.quotaUsed += 0.002;
+        if (!res.ok) {
+            if (res.status === 403) return { error: 'rate_limit' };
+            return [];
         }
-        
-        // Filter already processed
-        const newRepos = repos.filter(r => 
-            !state.processedRepos.includes(r.full_name)
-        );
-        
-        return newRepos.slice(0, 20); // Process 20 per cycle
+        const d = await res.json();
+        return d.items || [];
     } catch (e) {
-        log(\`❌ Search failed: \${e.message}\`, 'error');
+        log(`❌ Search error: ${e.message}`, 'error');
         return [];
     }
 }
 
-async function githubSearch(query, useToken) {
-    const url = \`https://api.github.com/search/repositories?q=\${encodeURIComponent(query)}&per_page=100&sort=stars\`;
-    
-    const headers = {
-        'Accept': 'application/vnd.github.v3+json'
-    };
-    
-    if (useToken && config.githubToken) {
-        headers['Authorization'] = \`token \${config.githubToken}\`;
-    }
-    
-    const response = await fetch(url, { headers });
-    
-    // Track quota
-    state.quotaUsed += 0.001;
-    
-    if (response.status === 403) {
-        return { error: 'rate_limit' };
-    }
-    
-    if (!response.ok) {
-        throw new Error(\`GitHub API error: \${response.status}\`);
-    }
-    
-    const data = await response.json();
-    return data.items || [];
-}
-
 // ============================================================================
-// REPO PROCESSING
+// STEP 3 — PROCESS REPO
 // ============================================================================
-
 async function processRepo(repo) {
-    log(\`📂 Processing \${repo.full_name}...\`, 'info');
-    
+    log(`📂 Processing ${repo.full_name}...`, 'info');
     try {
-        // Fetch repo files
         const files = await fetchRepoFiles(repo);
-        
+
         if (files.length === 0) {
-            log(\`⚠️ No files found in \${repo.full_name}\`, 'warning');
+            log(`⚠️ No matching files in ${repo.full_name}`, 'warning');
+            state.processedRepos.push(repo.full_name);
             return;
         }
-        
+
         // Store temporarily in IndexedDB
-        await storeTemporaryFiles(repo.full_name, files);
-        
-        // Extract patterns
-        const patterns = extractPatterns(files);
-        
-        // Compress patterns
-        const compressed = compressPatterns(patterns);
-        
-        // Add to book
-        if (!state.currentBook.patterns[config.targetDomain]) {
-            state.currentBook.patterns[config.targetDomain] = {};
-        }
-        
-        state.currentBook.patterns[config.targetDomain][repo.full_name] = compressed;
+        await dbSet('repos', repo.full_name, files);
+
+        // Build pattern entry
+        const pattern = {
+            files:      files.length,
+            totalSize:  files.reduce((s, f) => s + (f.size || 0), 0),
+            paths:      files.map(f => f.path),
+            scraped:    new Date().toISOString()
+        };
+
+        if (!state.currentBook.patterns[cfg.targetDomain])
+            state.currentBook.patterns[cfg.targetDomain] = {};
+
+        state.currentBook.patterns[cfg.targetDomain][repo.full_name] = pattern;
         state.currentBook.repos.push(repo.full_name);
         state.processedRepos.push(repo.full_name);
-        
-        updateStats();
-        
-        log(\`✅ Processed \${repo.full_name} (\${files.length} files)\`, 'success');
-        
+        state.currentBook.metadata.totalFiles += files.length;
+        state.currentBook.metadata.totalRepos  = state.processedRepos.length;
+
+        log(`✅ ${repo.full_name} — ${files.length} files`, 'success');
     } catch (e) {
-        log(\`❌ Failed to process \${repo.full_name}: \${e.message}\`, 'error');
+        log(`❌ Failed ${repo.full_name}: ${e.message}`, 'error');
     }
 }
 
 async function fetchRepoFiles(repo) {
-    // Get repo tree
-    const treeUrl = \`https://api.github.com/repos/\${repo.full_name}/git/trees/\${repo.default_branch || 'main'}?recursive=1\`;
-    
-    const headers = config.githubToken ? 
-        { 'Authorization': \`token \${config.githubToken}\` } : {};
-    
-    const response = await fetch(treeUrl, { headers });
-    state.quotaUsed += 0.001;
-    
-    if (!response.ok) {
-        // Try master branch
-        const masterUrl = \`https://api.github.com/repos/\${repo.full_name}/git/trees/master?recursive=1\`;
-        const masterResponse = await fetch(masterUrl, { headers });
-        state.quotaUsed += 0.001;
-        
-        if (!masterResponse.ok) {
-            return [];
-        }
-        
-        const data = await masterResponse.json();
-        return filterFiles(data.tree || [], config.targetDomain);
+    const branch = repo.default_branch || 'main';
+    const urls   = [
+        `https://api.github.com/repos/${repo.full_name}/git/trees/${branch}?recursive=1`,
+        `https://api.github.com/repos/${repo.full_name}/git/trees/master?recursive=1`
+    ];
+
+    for (const url of urls) {
+        try {
+            const res = await ghFetch(url, 'GET');
+            state.quotaUsed += 0.002;
+            if (!res.ok) continue;
+            const data = await res.json();
+            return filterFiles(data.tree || []);
+        } catch (e) { continue; }
     }
-    
-    const data = await response.json();
-    return filterFiles(data.tree || [], config.targetDomain);
+    return [];
 }
 
-function filterFiles(tree, domain) {
-    // Custom mode: use provided extensions
-    if (config.customMode) {
-        const extensions = config.fileExtensions;
-        const dependencyFiles = config.dependencyFiles || [];
-        
-        return tree
-            .filter(item => item.type === 'blob')
-            .filter(item => {
-                // Match file extensions
-                const matchesExt = extensions.some(ext => item.path.endsWith(ext));
-                
-                // Match dependency files
-                const matchesDep = dependencyFiles.some(dep => {
-                    const fileName = item.path.split('/').pop();
-                    return fileName === dep || item.path.endsWith(dep);
-                });
-                
-                return matchesExt || matchesDep;
-            })
-            .slice(0, 50); // Limit to 50 files per repo
-    }
-    
-    // Predefined mode: use built-in extensions
-    const extensions = {
-        'python': ['.py'],
-        'rust': ['.rs'],
-        'javascript': ['.js', '.jsx'],
-        'typescript': ['.ts', '.tsx'],
-        'go': ['.go'],
-        'docker': ['Dockerfile', '.dockerignore'],
-        'kubernetes': ['.yaml', '.yml'],
-        'github-actions': ['.yml', '.yaml'],
-        'shell': ['.sh', '.bash'],
-        'json': ['.json'],
-        'yaml': ['.yaml', '.yml'],
-        'markdown': ['.md']
-    };
-    
-    const exts = extensions[domain] || [];
-    
+function filterFiles(tree) {
+    const exts = cfg.fileExtensions;
+    const deps = cfg.dependencyFiles || [];
+
     return tree
-        .filter(item => item.type === 'blob')
-        .filter(item => exts.some(ext => item.path.endsWith(ext)))
-        .slice(0, 50); // Limit to 50 files per repo
+        .filter(f => f.type === 'blob')
+        .filter(f => {
+            const name    = f.path.split('/').pop();
+            const hasExt  = exts.some(e => f.path.endsWith(e));
+            const isDep   = deps.some(d => name === d || f.path.endsWith(d));
+            return hasExt || isDep;
+        })
+        .slice(0, 50);
 }
 
 // ============================================================================
-// PATTERN EXTRACTION & COMPRESSION
+// STEP 4 — PUSH TO GITHUB
 // ============================================================================
-
-function extractPatterns(files) {
-    // Simple extraction: just store file paths and sizes
-    return files.map(f => ({
-        path: f.path,
-        size: f.size,
-        sha: f.sha
-    }));
-}
-
-function compressPatterns(patterns) {
-    // Gravitational compression simulation
-    // In real implementation, apply actual compression
-    return {
-        files: patterns.length,
-        totalSize: patterns.reduce((sum, p) => sum + (p.size || 0), 0),
-        compressed: true
-    };
-}
-
-// ============================================================================
-// BOOK MANAGEMENT
-// ============================================================================
-
-async function cloneExistingBook() {
-    const bookFileName = `ai.book.${config.targetDomain}.lrb`;
-    log(`🔍 Checking repo for existing: ${bookFileName}`, 'info');
-    
-    try {
-        const apiUrl = `https://api.github.com/repos/${config.targetRepo}/contents/${bookFileName}`;
-        const headers = {
-            'Accept': 'application/vnd.github.v3+json',
-            'Authorization': `token ${config.githubToken}`
-        };
-        
-        const response = await fetch(apiUrl, { headers });
-        state.quotaUsed += 0.001;
-        
-        if (response.ok) {
-            const fileInfo = await response.json();
-            const decoded = decodeURIComponent(escape(atob(fileInfo.content.replace(/\n/g, ''))));
-            state.currentBook = JSON.parse(decoded);
-            state.processedRepos = state.currentBook.repos || [];
-            state.existingFileSha = fileInfo.sha;
-            log(`✅ Found existing book: ${state.processedRepos.length} repos already processed`, 'success');
-            log(`📌 Book SHA: ${fileInfo.sha.substring(0, 8)}...`, 'info');
-        } else if (response.status === 404) {
-            state.currentBook = createNewBook();
-            state.existingFileSha = null;
-            log(`📚 No existing book found - starting fresh`, 'info');
-        } else {
-            throw new Error(`GitHub API error: ${response.status}`);
-        }
-    } catch (e) {
-        state.currentBook = createNewBook();
-        state.existingFileSha = null;
-        log(`⚠️ Could not check repo: ${e.message} - starting fresh`, 'warning');
-    }
-}
-
-function createNewBook() {
-    return {
-        domain: config.targetDomain,
-        version: '1.0.0',
-        created: new Date().toISOString(),
-        updated: new Date().toISOString(),
-        repos: [],
-        patterns: {},
-        metadata: { totalFiles: 0, totalSize: 0 }
-    };
-}
-
-async function updateBook() {
-    state.currentBook.updated = new Date().toISOString();
-    state.currentBook.metadata.totalRepos = state.processedRepos.length;
-    
-    const bookJson = JSON.stringify(state.currentBook, null, 2);
-    const bookSize = new Blob([bookJson]).size;
-    
-    await storeBook(state.currentBook);
-    updateStats();
-    
-    log(`📊 Book updated locally: ${state.processedRepos.length} repos, ${(bookSize / 1024).toFixed(2)} KB`, 'info');
-    
-    await pushBookToGitHub(bookJson, bookSize);
-}
-
-async function pushBookToGitHub(bookJson, bookSize) {
-    if (!config.githubToken) {
-        log(`⚠️ No GitHub token provided - cannot push to GitHub`, 'warning');
-        log(`💾 Book saved in IndexedDB only`, 'warning');
+async function pushBookToGitHub() {
+    if (!cfg.githubToken) {
+        log('⚠️ No token — skipping GitHub push', 'warning');
+        await dbSet('books', cfg.targetDomain, state.currentBook);
         return;
     }
-    
-    const bookFileName = `ai.book.${config.targetDomain}.lrb`;
-    const apiUrl = `https://api.github.com/repos/${config.targetRepo}/contents/${bookFileName}`;
-    
-    log(`📤 Pushing ${bookFileName} to GitHub...`, 'info');
-    
+
+    state.currentBook.updated = new Date().toISOString();
+    const bookFile  = `ai.book.${cfg.targetDomain}.lrb`;
+    const bookJson  = JSON.stringify(state.currentBook, null, 2);
+    const bookSize  = new Blob([bookJson]).size;
+    const encoded   = btoa(unescape(encodeURIComponent(bookJson)));
+
+    log(`📤 Pushing ${bookFile} (${(bookSize/1024).toFixed(1)} KB)...`, 'info');
+
+    const url  = `https://api.github.com/repos/${cfg.targetRepo}/contents/${bookFile}`;
+    const body = {
+        message: `📚 Update ${bookFile} — ${state.processedRepos.length} repos [cycle ${state.cycle}] ${new Date().toISOString()}`,
+        content: encoded
+    };
+
+    if (state.existingFileSha) {
+        body.sha = state.existingFileSha;
+        log(`🔄 Updating file (SHA: ${state.existingFileSha.slice(0,8)}...)`, 'info');
+    } else {
+        log(`🆕 Creating file (first push)`, 'info');
+    }
+
     try {
-        const encodedContent = btoa(unescape(encodeURIComponent(bookJson)));
-        const commitMessage = `📚 Update ${bookFileName} - ${state.processedRepos.length} repos [${new Date().toISOString()}]`;
-        
-        const body = { message: commitMessage, content: encodedContent };
-        
-        if (state.existingFileSha) {
-            body.sha = state.existingFileSha;
-            log(`🔄 Updating existing file (SHA: ${state.existingFileSha.substring(0, 8)}...)`, 'info');
-        } else {
-            log(`🆕 Creating new file in repo`, 'info');
-        }
-        
-        const response = await fetch(apiUrl, {
-            method: 'PUT',
-            headers: {
-                'Accept': 'application/vnd.github.v3+json',
-                'Authorization': `token ${config.githubToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        });
-        
-        state.quotaUsed += 0.002;
-        
-        if (response.ok) {
-            const result = await response.json();
+        const res = await ghFetch(url, 'PUT', true, body);
+        state.quotaUsed += 0.003;
+
+        if (res.ok) {
+            const result = await res.json();
             state.existingFileSha = result.content.sha;
-            log(`✅ Pushed to GitHub: ${bookFileName} (${(bookSize / 1024).toFixed(2)} KB)`, 'success');
-            log(`🔗 Commit: ${result.commit.sha.substring(0, 8)} - ${result.commit.html_url}`, 'success');
+            setStats({ bookSize });
+            log(`✅ Pushed! Commit: ${result.commit.sha.slice(0,8)}`, 'success');
+            log(`🔗 ${result.commit.html_url}`, 'success');
         } else {
-            const error = await response.json();
-            throw new Error(error.message || `Status ${response.status}`);
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || `HTTP ${res.status}`);
         }
     } catch (e) {
         log(`❌ Push failed: ${e.message}`, 'error');
-        log(`💾 Book saved locally in IndexedDB (will retry next cycle)`, 'warning');
+        log(`💾 Saved locally in IndexedDB`, 'warning');
+        await dbSet('books', cfg.targetDomain, state.currentBook);
     }
 }
 
 // ============================================================================
-// CLEANUP
+// STEP 5 — CLEANUP
 // ============================================================================
-
-async function cleanupTemporaryData() {
-    log('🗑️ Cleaning up temporary data...', 'info');
-    
+async function cleanupTemp() {
+    log('🗑️ Cleaning temporary repo data...', 'info');
     try {
-        // Clear temporary repo files from IndexedDB
-        const tx = db.transaction(['repos'], 'readwrite');
-        await tx.objectStore('repos').clear();
-        
-        log('✅ Temporary data cleaned', 'success');
-        postMessage({ type: 'storage-update' });
-        
+        const d  = await openDB();
+        const tx = d.transaction(['repos'], 'readwrite');
+        tx.objectStore('repos').clear();
+        await updateStorageStats();
+        log('✅ Temp data cleaned', 'success');
     } catch (e) {
-        log(\`⚠️ Cleanup failed: \${e.message}\`, 'warning');
+        log(`⚠️ Cleanup error: ${e.message}`, 'warning');
     }
 }
 
-async function cleanup() {
-    log('🧹 Final cleanup...', 'info');
-    await saveState();
-    await cleanupTemporaryData();
-    log('✅ Cleanup complete', 'success');
+// ============================================================================
+// GITHUB FETCH HELPER
+// ============================================================================
+function ghFetch(url, method = 'GET', useToken = true, body = null) {
+    const headers = { 'Accept': 'application/vnd.github.v3+json' };
+    if (useToken && cfg.githubToken) headers['Authorization'] = `token ${cfg.githubToken}`;
+    if (body) headers['Content-Type'] = 'application/json';
+    return fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined
+    });
 }
 
 // ============================================================================
-// INDEXEDDB OPERATIONS
+// INDEXEDDB
 // ============================================================================
-
 function openDB() {
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open('AIBookFactory', 1);
-        
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-        
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            
-            if (!db.objectStoreNames.contains('state')) {
-                db.createObjectStore('state');
-            }
-            
-            if (!db.objectStoreNames.contains('books')) {
-                db.createObjectStore('books');
-            }
-            
-            if (!db.objectStoreNames.contains('repos')) {
-                db.createObjectStore('repos');
-            }
+        const req = indexedDB.open('AIBookFactory', 2);
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => resolve(req.result);
+        req.onupgradeneeded = e => {
+            const d = e.target.result;
+            ['state','books','repos'].forEach(s => {
+                if (!d.objectStoreNames.contains(s)) d.createObjectStore(s);
+            });
         };
     });
 }
 
-async function saveState() {
-    const tx = db.transaction(['state'], 'readwrite');
-    await tx.objectStore('state').put(state, 'factoryState');
+function dbGet(store, key) {
+    return openDB().then(d => new Promise((res, rej) => {
+        const req = d.transaction([store], 'readonly').objectStore(store).get(key);
+        req.onsuccess = () => res(req.result);
+        req.onerror   = () => rej(req.error);
+    }));
 }
 
-async function loadState() {
-    const tx = db.transaction(['state'], 'readonly');
-    return await tx.objectStore('state').get('factoryState');
-}
-
-async function storeBook(book) {
-    const tx = db.transaction(['books'], 'readwrite');
-    await tx.objectStore('books').put(book, config.targetDomain);
-}
-
-async function storeTemporaryFiles(repoName, files) {
-    const tx = db.transaction(['repos'], 'readwrite');
-    await tx.objectStore('repos').put(files, repoName);
+function dbSet(store, key, value) {
+    return openDB().then(d => new Promise((res, rej) => {
+        const req = d.transaction([store], 'readwrite').objectStore(store).put(value, key);
+        req.onsuccess = () => res();
+        req.onerror   = () => rej(req.error);
+    }));
 }
 
 // ============================================================================
-// UTILITIES
+// INIT
 // ============================================================================
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function waitNextHour() {
-    const now = Date.now();
-    const elapsed = now - state.cycleStartTime;
-    const remaining = 3600000 - elapsed; // 1 hour in ms
-    
-    if (remaining > 0) {
-        const minutes = Math.ceil(remaining / 60000);
-        log(\`⏰ Waiting \${minutes} minutes for next hour...\`, 'info');
-        postMessage({ 
-            type: 'log', 
-            data: { message: \`Next run in \${minutes} minutes\`, level: 'info' }
-        });
-        await sleep(remaining);
+window.addEventListener('load', async () => {
+    log('🌌 AI Book Factory ready', 'success');
+    db = await openDB();
+    const saved = await dbGet('state', 'main');
+    if (saved) {
+        state = saved;
+        setStats({ cycle: state.cycle, repos: state.processedRepos.length, quota: state.quotaUsed });
+        log(`♻️  Previous session found — ${state.processedRepos.length} repos already processed`, 'info');
     }
-}
-
-function updateStats() {
-    postMessage({
-        type: 'stats',
-        data: {
-            cycle: state.cycle,
-            reposProcessed: state.processedRepos.length,
-            quotaUsed: state.quotaUsed,
-            bookSize: state.currentBook ? new Blob([JSON.stringify(state.currentBook)]).size : 0
-        }
-    });
-}
-
-function log(message, level = 'info') {
-    postMessage({
-        type: 'log',
-        data: { message, level }
-    });
-}
-`;
-        }
-    </script>
+    await updateStorageStats();
+});
+</script>
 </body>
 </html>
