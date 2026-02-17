@@ -452,7 +452,15 @@ async function runLoop() {
             document.getElementById('sNext').textContent = `${mins} min`;
             setStats({ quota: state.quotaUsed });
             await dbSet('state', 'main', state);
-            await sleep(remaining);
+            // AMÉLIORATION 5: Countdown live — mise à jour toutes les 30s
+            let timeLeft = remaining;
+            while (timeLeft > 0 && running && !stopFlag) {
+                const minsLeft = Math.ceil(timeLeft / 60000);
+                document.getElementById('sNext').textContent = `${minsLeft}m`;
+                const chunk = Math.min(timeLeft, 30000);
+                await sleep(chunk);
+                timeLeft -= chunk;
+            }
             state.quotaUsed   = 0;
             state.cycleStart  = Date.now();
             document.getElementById('sNext').textContent = '--';
@@ -499,9 +507,16 @@ async function runLoop() {
 
         log(`━━━ ✅ CYCLE ${state.cycle} COMPLETE ━━━`, 'success');
 
-        // Wait 60 s before next cycle (anti-spam)
-        log('💤 Waiting 60s before next cycle...', 'info');
-        await sleep(60000);
+        // Wait 60s before next cycle avec countdown live
+        log('💤 Next cycle in 60s...', 'info');
+        let waitLeft = 60000;
+        while (waitLeft > 0 && running && !stopFlag) {
+            document.getElementById('sNext').textContent = `${Math.ceil(waitLeft/1000)}s`;
+            const chunk = Math.min(waitLeft, 5000);
+            await sleep(chunk);
+            waitLeft -= chunk;
+        }
+        document.getElementById('sNext').textContent = '--';
     }
 
     if (stopFlag) {
@@ -591,24 +606,30 @@ const DOMAIN_DEPS = {
 
 async function discoverRepos() {
     const query = cfg.searchQuery || `language:${cfg.targetDomain} stars:>100`;
-    log(`🔎 GitHub search: "${query}"`, 'info');
 
-    let repos = await githubSearch(query, !!cfg.githubToken);
+    // AMÉLIORATION 4: Pagination — on tourne sur plusieurs pages pour toujours trouver du nouveau
+    // page courante = Math.floor(processedRepos.length / 100) + 1
+    const page = Math.max(1, Math.floor(state.processedRepos.length / 80) + 1);
+    log(`🔎 GitHub search p${page}: "${query}"`, 'info');
 
-    if (!Array.isArray(repos)) {
-        log(`⚠️ Search failed — retrying without token`, 'warning');
-        repos = await githubSearch(query, false);
+    let repos = await githubSearch(query, !!cfg.githubToken, page);
+
+    if (!Array.isArray(repos) || repos.length === 0) {
+        // Retry page 1 without token as fallback
+        log(`⚠️ Search failed p${page} — retrying p1`, 'warning');
+        repos = await githubSearch(query, false, 1);
     }
 
     if (!Array.isArray(repos)) return [];
 
     const fresh = repos.filter(r => !state.processedRepos.includes(r.full_name));
+    log(`📋 ${repos.length} results — ${fresh.length} new`, 'info');
     return fresh.slice(0, 20);
 }
 
-async function githubSearch(query, useToken) {
+async function githubSearch(query, useToken, page = 1) {
     try {
-        const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=100&sort=stars`;
+        const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=100&sort=stars&page=${page}`;
         const res = await ghFetch(url, 'GET', useToken);
         state.quotaUsed += 0.002;
         if (!res.ok) {
@@ -632,19 +653,51 @@ async function processRepo(repo) {
         const files = await fetchRepoFiles(repo);
 
         if (files.length === 0) {
-            log(`⚠️ No matching files in ${repo.full_name}`, 'warning');
+            log(`⏭️ Skip ${repo.full_name} — no matching files`, 'warning');
+            state.processedRepos.push(repo.full_name);
+            return;
+        }
+
+        // AMÉLIORATION 1: Min files filter — repo trop vide = pas pertinent
+        if (files.length < 3) {
+            log(`⏭️ Skip ${repo.full_name} — too few files (${files.length})`, 'warning');
+            state.processedRepos.push(repo.full_name);
+            return;
+        }
+
+        // AMÉLIORATION 2: Max single file size (skip fichiers > 500KB = probablement auto-générés)
+        const oversized = files.filter(f => (f.size || 0) > 512000);
+        if (oversized.length > 0) {
+            log(`⚠️ ${repo.full_name} — removing ${oversized.length} oversized files`, 'warning');
+        }
+        const cleanFiles = files.filter(f => (f.size || 0) <= 512000);
+        if (cleanFiles.length === 0) {
+            log(`⏭️ Skip ${repo.full_name} — all files oversized`, 'warning');
             state.processedRepos.push(repo.full_name);
             return;
         }
 
         // Store temporarily in IndexedDB
-        await dbSet('repos', repo.full_name, files);
+        await dbSet('repos', repo.full_name, cleanFiles);
+
+        // AMÉLIORATION 3: Catégorisation automatique par dossier racine
+        const categories = {};
+        cleanFiles.forEach(f => {
+            const topDir = f.path.includes('/') ? f.path.split('/')[0] : 'root';
+            if (!categories[topDir]) categories[topDir] = 0;
+            categories[topDir]++;
+        });
+        const topCats = Object.entries(categories)
+            .sort((a,b) => b[1]-a[1])
+            .slice(0,5)
+            .map(([k,v]) => k);
 
         // Build pattern entry
         const pattern = {
-            files:      files.length,
-            totalSize:  files.reduce((s, f) => s + (f.size || 0), 0),
-            paths:      files.map(f => f.path),
+            files:      cleanFiles.length,
+            totalSize:  cleanFiles.reduce((s, f) => s + (f.size || 0), 0),
+            paths:      cleanFiles.map(f => f.path),
+            categories: topCats,
             scraped:    new Date().toISOString()
         };
 
@@ -654,10 +707,10 @@ async function processRepo(repo) {
         state.currentBook.patterns[cfg.targetDomain][repo.full_name] = pattern;
         state.currentBook.repos.push(repo.full_name);
         state.processedRepos.push(repo.full_name);
-        state.currentBook.metadata.totalFiles += files.length;
+        state.currentBook.metadata.totalFiles += cleanFiles.length;
         state.currentBook.metadata.totalRepos  = state.processedRepos.length;
 
-        log(`✅ ${repo.full_name} — ${files.length} files`, 'success');
+        log(`✅ ${repo.full_name} — ${cleanFiles.length} files | cats: ${topCats.join(', ')}`, 'success');
     } catch (e) {
         log(`❌ Failed ${repo.full_name}: ${e.message}`, 'error');
     }
@@ -705,6 +758,16 @@ async function pushBookToGitHub() {
     state.currentBook.repos = [...new Set(state.currentBook.repos)];
     state.processedRepos    = [...new Set(state.processedRepos)];
     state.currentBook.metadata.totalRepos = state.currentBook.repos.length;
+
+    // AMÉLIORATION 6: Version bump automatique (1.0.0 → 1.0.1 → 1.0.2...)
+    const parts = (state.currentBook.version || '1.0.0').split('.').map(Number);
+    parts[2]++;
+    if (parts[2] >= 100) { parts[2] = 0; parts[1]++; }
+    if (parts[1] >= 100) { parts[1] = 0; parts[0]++; }
+    state.currentBook.version = parts.join('.');
+    state.currentBook.metadata.totalSize = Object.values(
+        state.currentBook.patterns[cfg.targetDomain] || {}
+    ).reduce((sum, r) => sum + (r.totalSize || 0), 0);
     if (!cfg.githubToken) {
         log('⚠️ No token — skipping GitHub push', 'warning');
         await dbSet('books', cfg.targetDomain, state.currentBook);
