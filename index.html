@@ -479,6 +479,11 @@ async function runLoop() {
             if (!running || stopFlag) break;
             while (paused && !stopFlag) await sleep(500);
             if (state.quotaUsed >= cfg.quotaLimit) break;
+            // Extra safety: skip if already processed (deduplicate)
+            if (state.processedRepos.includes(repo.full_name)) {
+                log(`⏭️ Skip duplicate: ${repo.full_name}`, 'info');
+                continue;
+            }
             await processRepo(repo);
             setStats({ repos: state.processedRepos.length, quota: state.quotaUsed });
         }
@@ -585,7 +590,7 @@ const DOMAIN_DEPS = {
 };
 
 async function discoverRepos() {
-    const query = cfg.searchQuery || `language:${cfg.targetDomain} stars:>50`;
+    const query = cfg.searchQuery || `language:${cfg.targetDomain} stars:>100`;
     log(`🔎 GitHub search: "${query}"`, 'info');
 
     let repos = await githubSearch(query, !!cfg.githubToken);
@@ -696,6 +701,10 @@ function filterFiles(tree) {
 // STEP 4 — PUSH TO GITHUB
 // ============================================================================
 async function pushBookToGitHub() {
+    // Deduplicate repos list before pushing
+    state.currentBook.repos = [...new Set(state.currentBook.repos)];
+    state.processedRepos    = [...new Set(state.processedRepos)];
+    state.currentBook.metadata.totalRepos = state.currentBook.repos.length;
     if (!cfg.githubToken) {
         log('⚠️ No token — skipping GitHub push', 'warning');
         await dbSet('books', cfg.targetDomain, state.currentBook);
