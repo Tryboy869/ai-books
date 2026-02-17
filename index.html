@@ -1039,24 +1039,38 @@ function compressPatterns(patterns) {
 // ============================================================================
 
 async function cloneExistingBook() {
-    const bookUrl = \`https://raw.githubusercontent.com/\${config.targetRepo}/main/ai.book.\${config.targetDomain}.lrb\`;
+    const bookFileName = `ai.book.${config.targetDomain}.lrb`;
+    log(`🔍 Checking repo for existing: ${bookFileName}`, 'info');
     
     try {
-        const response = await fetch(bookUrl);
+        const apiUrl = `https://api.github.com/repos/${config.targetRepo}/contents/${bookFileName}`;
+        const headers = {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${config.githubToken}`
+        };
+        
+        const response = await fetch(apiUrl, { headers });
+        state.quotaUsed += 0.001;
         
         if (response.ok) {
-            const bookData = await response.text();
-            state.currentBook = JSON.parse(bookData);
+            const fileInfo = await response.json();
+            const decoded = decodeURIComponent(escape(atob(fileInfo.content.replace(/\n/g, ''))));
+            state.currentBook = JSON.parse(decoded);
             state.processedRepos = state.currentBook.repos || [];
-            log('✅ Cloned existing book', 'success');
-        } else {
-            // First time, create new book
+            state.existingFileSha = fileInfo.sha;
+            log(`✅ Found existing book: ${state.processedRepos.length} repos already processed`, 'success');
+            log(`📌 Book SHA: ${fileInfo.sha.substring(0, 8)}...`, 'info');
+        } else if (response.status === 404) {
             state.currentBook = createNewBook();
-            log('📚 Created new book', 'info');
+            state.existingFileSha = null;
+            log(`📚 No existing book found - starting fresh`, 'info');
+        } else {
+            throw new Error(`GitHub API error: ${response.status}`);
         }
     } catch (e) {
         state.currentBook = createNewBook();
-        log('📚 Created new book (no existing book found)', 'info');
+        state.existingFileSha = null;
+        log(`⚠️ Could not check repo: ${e.message} - starting fresh`, 'warning');
     }
 }
 
@@ -1068,31 +1082,75 @@ function createNewBook() {
         updated: new Date().toISOString(),
         repos: [],
         patterns: {},
-        metadata: {
-            totalFiles: 0,
-            totalSize: 0
-        }
+        metadata: { totalFiles: 0, totalSize: 0 }
     };
 }
 
 async function updateBook() {
-    // Update metadata
     state.currentBook.updated = new Date().toISOString();
     state.currentBook.metadata.totalRepos = state.processedRepos.length;
     
-    // Calculate book size
-    const bookJson = JSON.stringify(state.currentBook);
+    const bookJson = JSON.stringify(state.currentBook, null, 2);
     const bookSize = new Blob([bookJson]).size;
     
-    // Store in IndexedDB
     await storeBook(state.currentBook);
-    
     updateStats();
     
-    log(\`📊 Book updated: \${state.processedRepos.length} repos, \${(bookSize / 1024).toFixed(2)} KB\`, 'info');
+    log(`📊 Book updated locally: ${state.processedRepos.length} repos, ${(bookSize / 1024).toFixed(2)} KB`, 'info');
     
-    // Note: In real implementation, push to GitHub here
-    // For now, just store locally
+    await pushBookToGitHub(bookJson, bookSize);
+}
+
+async function pushBookToGitHub(bookJson, bookSize) {
+    if (!config.githubToken) {
+        log(`⚠️ No GitHub token provided - cannot push to GitHub`, 'warning');
+        log(`💾 Book saved in IndexedDB only`, 'warning');
+        return;
+    }
+    
+    const bookFileName = `ai.book.${config.targetDomain}.lrb`;
+    const apiUrl = `https://api.github.com/repos/${config.targetRepo}/contents/${bookFileName}`;
+    
+    log(`📤 Pushing ${bookFileName} to GitHub...`, 'info');
+    
+    try {
+        const encodedContent = btoa(unescape(encodeURIComponent(bookJson)));
+        const commitMessage = `📚 Update ${bookFileName} - ${state.processedRepos.length} repos [${new Date().toISOString()}]`;
+        
+        const body = { message: commitMessage, content: encodedContent };
+        
+        if (state.existingFileSha) {
+            body.sha = state.existingFileSha;
+            log(`🔄 Updating existing file (SHA: ${state.existingFileSha.substring(0, 8)}...)`, 'info');
+        } else {
+            log(`🆕 Creating new file in repo`, 'info');
+        }
+        
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/vnd.github.v3+json',
+                'Authorization': `token ${config.githubToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+        
+        state.quotaUsed += 0.002;
+        
+        if (response.ok) {
+            const result = await response.json();
+            state.existingFileSha = result.content.sha;
+            log(`✅ Pushed to GitHub: ${bookFileName} (${(bookSize / 1024).toFixed(2)} KB)`, 'success');
+            log(`🔗 Commit: ${result.commit.sha.substring(0, 8)} - ${result.commit.html_url}`, 'success');
+        } else {
+            const error = await response.json();
+            throw new Error(error.message || `Status ${response.status}`);
+        }
+    } catch (e) {
+        log(`❌ Push failed: ${e.message}`, 'error');
+        log(`💾 Book saved locally in IndexedDB (will retry next cycle)`, 'warning');
+    }
 }
 
 // ============================================================================
